@@ -1,0 +1,40 @@
+name: Build Execution File (.EXE)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: # 수동으로 빌드를 실행할 수 있는 버튼 활성화
+
+jobs:
+  build:
+    runs-on: windows-latest # 윈도우 환경 실행 환경 구축
+
+    steps:
+    - name: 소스코드 체크아웃
+      uses: actions/checkout@v4
+
+    - name: 파이썬 3.10 환경 설정
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+
+    - name: 종속성 라이브러리 설치
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: PyInstaller를 통한 최적화 EXE 단일 빌드 진행
+      run: |
+        pyinstaller --noconfirm --onedir --windowed --clean --name="Rel_Analyzer" main.py
+
+    - name: 빌드 완료 파일 압축 및 패키징
+      run: |
+        powershell Compress-Archive -Path dist/Rel_Analyzer -DestinationPath Rel_Analyzer_Windows.zip
+
+    - name: 결과물 업로드 (Artifacts 저장)
+      uses: actions/upload-artifact@v4
+      with:
+        name: Reliability-Data-Analyzer-EXE
+        path: Rel_Analyzer_Windows.zip
+        retention-days: 7
